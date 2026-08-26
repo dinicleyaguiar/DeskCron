@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Build
+build/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Runtime
+.deskcron/state/
+.deskcron/logs/
+*.log
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Package managers
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Temporary
+.tmp/
+tmp/
+temp/

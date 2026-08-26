@@ -1,0 +1,21 @@
+version: 1
+name: Website health check
+description: Check an endpoint every 30 minutes and notify on success.
+
+triggers:
+  - type: cron
+    expression: "*/30 * * * *"
+    timezone: America/Belem
+
+steps:
+  - name: Check endpoint
+    http:
+      url: https://example.com
+      method: GET
+      expect_status: [200]
+      timeout_seconds: 10
+    save_as: response
+
+  - notify:
+      title: DeskCron
+      message: Website responded successfully

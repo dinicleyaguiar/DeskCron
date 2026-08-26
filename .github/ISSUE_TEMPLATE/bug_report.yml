@@ -1,0 +1,24 @@
+name: Bug report
+description: Report a reproducible DeskCron problem
+title: "bug: "
+labels: [bug]
+body:
+  - type: textarea
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Workflow
+      description: Remove secrets before pasting YAML.
+      render: yaml
+  - type: input
+    attributes:
+      label: DeskCron version
+  - type: input
+    attributes:
+      label: Node.js version
+  - type: input
+    attributes:
+      label: Operating system
