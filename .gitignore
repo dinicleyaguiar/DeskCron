@@ -10,6 +10,7 @@ coverage/
 # Runtime
 .deskcron/state/
 .deskcron/logs/
+.deskcron/history/
 *.log
 
 # Secrets and local configuration

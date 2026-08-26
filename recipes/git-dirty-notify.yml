@@ -1,0 +1,19 @@
+version: 1
+name: Git dirty tree reminder
+description: Notify only when a repository contains uncommitted changes.
+
+triggers:
+  - type: startup
+
+steps:
+  - id: status
+    name: Read working tree
+    run: git status --porcelain
+    save_as: changes
+
+  - id: notify
+    needs: [status]
+    if: changes != ""
+    notify:
+      title: Uncommitted changes
+      message: This repository has local changes waiting for you

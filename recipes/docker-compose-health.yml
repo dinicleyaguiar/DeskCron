@@ -1,0 +1,16 @@
+version: 1
+name: Docker Compose health
+description: Capture Docker Compose service status and notify when the check completes.
+
+steps:
+  - id: services
+    name: Read service status
+    timeout_seconds: 30
+    run: docker compose ps
+    save_as: compose_status
+
+  - id: notify
+    needs: [services]
+    notify:
+      title: Docker Compose
+      message: Service status check completed

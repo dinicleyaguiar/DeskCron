@@ -1,0 +1,28 @@
+version: 1
+name: Website health check
+description: Check a website every 30 minutes with retries.
+
+triggers:
+  - type: cron
+    expression: "*/30 * * * *"
+
+steps:
+  - id: check
+    name: Check endpoint
+    retry:
+      attempts: 3
+      delay_seconds: 3
+      backoff: 2
+      max_delay_seconds: 15
+    timeout_seconds: 10
+    http:
+      url: https://example.com
+      method: GET
+      expect_status: [200]
+
+  - id: notify
+    name: Notify success
+    needs: [check]
+    notify:
+      title: DeskCron
+      message: Website health check passed

@@ -1,0 +1,24 @@
+version: 1
+name: Local service check
+description: Check a local development service once per minute.
+
+triggers:
+  - type: cron
+    expression: "* * * * *"
+
+steps:
+  - id: health
+    name: Check local service
+    retry:
+      attempts: 2
+      delay_seconds: 2
+    timeout_seconds: 5
+    http:
+      url: http://127.0.0.1:3000/health
+      expect_status: [200]
+
+  - id: notify
+    needs: [health]
+    notify:
+      title: Local service
+      message: Local health endpoint is responding

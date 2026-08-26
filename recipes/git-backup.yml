@@ -1,0 +1,48 @@
+version: 1
+name: Git backup
+description: Commit and push local changes when DeskCron starts.
+
+triggers:
+  - type: startup
+
+steps:
+  - id: status
+    name: Detect changes
+    run: git status --porcelain
+    save_as: changes
+
+  - id: stage
+    name: Stage changes
+    needs: [status]
+    if: changes != ""
+    run: git add --all
+
+  - id: commit
+    name: Create backup commit
+    needs: [stage]
+    run: 'git commit -m "chore: local backup"'
+
+  - id: push
+    name: Push changes
+    needs: [commit]
+    retry:
+      attempts: 3
+      delay_seconds: 2
+      backoff: 2
+    timeout_seconds: 60
+    run: git push
+
+  - id: changed-notice
+    name: Notify backup
+    needs: [push]
+    notify:
+      title: DeskCron
+      message: Git backup completed
+
+  - id: clean-notice
+    name: Notify clean tree
+    needs: [status]
+    if: changes == ""
+    notify:
+      title: DeskCron
+      message: Repository already clean

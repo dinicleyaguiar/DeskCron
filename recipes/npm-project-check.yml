@@ -1,0 +1,30 @@
+version: 1
+name: Node project check
+description: Run type checks, tests and build for a Node.js project.
+
+steps:
+  - id: typecheck
+    name: Type check
+    timeout_seconds: 180
+    run: npm run typecheck
+
+  - id: test
+    name: Tests
+    needs: [typecheck]
+    retry:
+      attempts: 2
+      delay_seconds: 2
+    timeout_seconds: 300
+    run: npm test
+
+  - id: build
+    name: Build
+    needs: [test]
+    timeout_seconds: 300
+    run: npm run build
+
+  - id: notify
+    needs: [build]
+    notify:
+      title: DeskCron
+      message: Project checks passed

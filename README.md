@@ -2,48 +2,15 @@
 
 Local-first workflow automation for developers.
 
-Run scheduled jobs, shell commands, HTTP checks, Git tasks, local Ollama prompts and desktop notifications from simple YAML files. No account and no hosted control plane are required.
+DeskCron runs scheduled jobs, shell commands, HTTP checks, Git tasks, local Ollama prompts and desktop notifications from small YAML files. It does not require an account or a hosted control plane.
 
-> Status: early development. The v0.1 CLI is intentionally small while the workflow format stabilizes.
+> v0.2.0 adds dry runs, local run history, retries with backoff, step timeouts, conditions, dependencies and a built-in recipe collection.
 
-## Why DeskCron
+## The idea
 
-Many personal developer automations do not need a cloud runner. They need a predictable process on the machine where the code, tools and local models already live.
+A lot of developer automation belongs on the machine where the project, credentials, containers and local tools already live.
 
-DeskCron keeps that workflow local:
-
-- cron and startup triggers
-- shell commands
-- HTTP requests
-- Ollama integration
-- desktop notifications
-- environment-variable secrets
-- overlap protection
-- workflow validation
-
-## Quick start
-
-Requires Node.js 22.12 or newer.
-
-```bash
-npm install
-npm run build
-npm link
-
-deskcron init
-deskcron validate
-deskcron run hello
-```
-
-Keep scheduled workflows running with:
-
-```bash
-deskcron watch
-```
-
-## A 30-second workflow
-
-Create `.deskcron/workflows/project-check.yml`:
+DeskCron gives those jobs a small, reviewable workflow file:
 
 ```yaml
 version: 1
@@ -54,56 +21,276 @@ triggers:
     expression: "0 8 * * *"
 
 steps:
-  - run: git pull --ff-only
-  - run: npm test
-  - notify:
+  - id: tests
+    retry:
+      attempts: 2
+      delay_seconds: 2
+    timeout_seconds: 300
+    run: npm test
+
+  - id: done
+    needs: [tests]
+    notify:
       title: Project check
       message: Tests passed
 ```
 
-Then run it immediately:
+Run it now:
 
 ```bash
 deskcron run project-check
 ```
 
-Or keep its schedule active:
+Or keep schedules active:
 
 ```bash
 deskcron watch
 ```
 
-Commands run from the directory where `deskcron` was started unless a step sets `cwd`. This makes project-local workflows work naturally from `.deskcron/workflows/`.
+## What v0.2 includes
+
+- manual, startup and cron execution
+- shell commands
+- HTTP requests
+- local Ollama steps
+- desktop notifications
+- `--dry-run` execution plans
+- retries with delay and exponential backoff
+- per-step timeouts
+- safe conditional steps
+- dependencies between steps
+- local JSONL run history
+- overlap prevention
+- environment-variable secrets
+- workflow validation
+- bundled recipes that can be copied from the CLI
+
+## Requirements
+
+- Node.js 22.12 or newer
+- npm
+- optional: Ollama for local model steps
+
+## Install from source
+
+Until the first npm release, install from the repository:
+
+```bash
+npm install
+npm run check
+npm link
+```
+
+Then verify the environment:
+
+```bash
+deskcron doctor
+```
+
+## Quick start
+
+Create a local workspace:
+
+```bash
+deskcron init
+```
+
+Validate it:
+
+```bash
+deskcron validate
+```
+
+Preview what will happen without executing anything:
+
+```bash
+deskcron run hello --dry-run
+```
+
+Run it:
+
+```bash
+deskcron run hello
+```
+
+## Recipes
+
+DeskCron ships with workflows you can copy into a project.
+
+List them:
+
+```bash
+deskcron recipes
+```
+
+Copy one:
+
+```bash
+deskcron recipe website-check
+```
+
+Current recipes:
+
+- `api-health`
+- `docker-compose-health`
+- `git-backup`
+- `git-dirty-notify`
+- `local-service-check`
+- `npm-project-check`
+- `ollama-summary`
+- `website-check`
+
+Recipes are normal YAML files. Review and edit them before running.
+
+## Conditions
+
+DeskCron deliberately keeps conditions small and predictable. It does not evaluate JavaScript from `if` expressions.
+
+Supported forms:
+
+```yaml
+if: always()
+if: success()
+if: failure()
+if: exists(API_TOKEN)
+if: empty(changes)
+if: changes == ""
+if: environment != "production"
+```
+
+Variables created with `save_as` and process environment variables can be used in conditions.
+
+Example:
+
+```yaml
+steps:
+  - id: status
+    run: git status --porcelain
+    save_as: changes
+
+  - id: commit
+    needs: [status]
+    if: changes != ""
+    run: git add --all && git commit -m "chore: local backup"
+```
+
+## Dependencies
+
+Give a step an `id`, then reference earlier successful steps with `needs`:
+
+```yaml
+steps:
+  - id: test
+    run: npm test
+
+  - id: build
+    needs: [test]
+    run: npm run build
+
+  - id: notify
+    needs: [build]
+    notify:
+      title: DeskCron
+      message: Build finished
+```
+
+A step is skipped when one of its required dependencies did not finish successfully.
+
+## Retries and backoff
+
+Retry transient operations such as HTTP checks or pushes:
+
+```yaml
+steps:
+  - id: push
+    retry:
+      attempts: 4
+      delay_seconds: 2
+      backoff: 2
+      max_delay_seconds: 30
+    timeout_seconds: 60
+    run: git push
+```
+
+`attempts` is the total number of attempts, including the first one.
+
+## Timeouts
+
+`timeout_seconds` works on shell, HTTP, Ollama and notification steps:
+
+```yaml
+steps:
+  - timeout_seconds: 120
+    run: npm test
+```
+
+For compatibility, HTTP steps may still place `timeout_seconds` inside `http`; the top-level value takes precedence.
+
+## Run history
+
+Successful and failed real runs are recorded locally at:
+
+```text
+.deskcron/history/runs.jsonl
+```
+
+This directory is ignored by the default `.gitignore`.
+
+Show recent runs:
+
+```bash
+deskcron history
+```
+
+Filter them:
+
+```bash
+deskcron history --workflow "Website" --limit 50
+```
+
+Machine-readable output:
+
+```bash
+deskcron history --json
+```
+
+DeskCron does not store command stdout, workflow variables or Ollama responses in run history. History contains execution metadata and compact error information.
 
 ## Local Ollama
 
-Ollama is optional. When installed, a workflow can use a local model without an external API key:
+Ollama is optional. A workflow can call a local model without an external API key:
 
 ```yaml
 version: 1
 name: Commit summary
 
 steps:
-  - run: git log -10 --pretty=format:"%h %s"
+  - id: commits
+    run: git log -10 --pretty=format:"%h %s"
     save_as: commits
 
-  - ollama:
+  - id: summary
+    needs: [commits]
+    timeout_seconds: 120
+    ollama:
       model: qwen3:8b
       prompt: |
         Summarize these commits:
         {{commits}}
     save_as: summary
 
-  - notify:
+  - id: notify
+    needs: [summary]
+    notify:
       title: Commit summary
       message: "{{summary}}"
 ```
 
-The default Ollama endpoint is `http://127.0.0.1:11434`. Override it with `OLLAMA_HOST`. The default model can be set with `DESKCRON_OLLAMA_MODEL`.
+The default endpoint is `http://127.0.0.1:11434`. Override it with `OLLAMA_HOST`. Set a default model with `DESKCRON_OLLAMA_MODEL`.
 
 ## Secrets
 
-Use environment variables rather than putting credentials in workflow files:
+Keep credentials in environment variables rather than workflow files:
 
 ```yaml
 steps:
@@ -113,20 +300,25 @@ steps:
         Authorization: "Bearer ${API_TOKEN}"
 ```
 
-An undefined environment variable causes the step to fail instead of silently sending an empty value.
+An undefined environment variable causes the step to fail instead of silently substituting an empty string.
 
 ## CLI
 
 ```text
-deskcron init                  Create a starter workspace
-deskcron list                  List workflows
-deskcron validate [workflow]   Validate YAML and cron expressions
-deskcron run <workflow>        Run one workflow now
-deskcron watch                 Run startup triggers and schedule cron jobs
-deskcron doctor                Check the local environment
+deskcron init                    Create a starter workspace
+deskcron list                    List workflows
+deskcron validate [workflow]     Validate YAML, conditions, dependencies and cron
+deskcron run <workflow>          Run a workflow now
+deskcron run <workflow> --dry-run
+                                 Preview a workflow without side effects
+deskcron watch                   Run startup triggers and schedule cron jobs
+deskcron history                 Show local run history
+deskcron recipes                 List bundled recipes
+deskcron recipe <name>           Copy a recipe into .deskcron/workflows
+deskcron doctor                  Check the local environment
 ```
 
-## Workflow format
+## Workflow reference
 
 ```yaml
 version: 1
@@ -144,56 +336,64 @@ triggers:
     timezone: America/Belem
 
 steps:
-  - name: Run a command
+  - id: status
+    name: Run a command
     run: git status --short
     cwd: .
     timeout_seconds: 30
-    save_as: status
+    save_as: git_status
 
-  - name: Check an endpoint
+  - id: endpoint
+    name: Check an endpoint
+    retry:
+      attempts: 3
+      delay_seconds: 2
+      backoff: 2
+    timeout_seconds: 10
     http:
       url: https://example.com
       method: GET
       expect_status: [200]
     save_as: response
 
-  - name: Use a local model
+  - id: local-summary
+    name: Use a local model
+    needs: [status]
+    if: git_status != ""
+    timeout_seconds: 120
     ollama:
       model: qwen3:8b
-      prompt: "Summarize: {{status}}"
+      prompt: "Summarize: {{git_status}}"
     save_as: summary
 
-  - notify:
+  - id: finished
+    needs: [endpoint]
+    notify:
       title: Finished
-      message: "{{summary}}"
+      message: Workflow completed
 ```
-
-## Recipes
-
-The `examples/` directory includes:
-
-- Git backup
-- website health check
-- local Ollama Git summary
-
-The long-term goal is to make useful workflows easy to copy, review and share.
 
 ## Security model
 
-A DeskCron workflow can execute shell commands with your user permissions. Review workflows before running them, just as you would review a shell script or CI workflow.
+A DeskCron workflow can execute shell commands with your user permissions. Review workflow files before running them, the same way you would review a shell script or CI workflow.
 
-DeskCron itself has no hosted service and does not require an account. See [SECURITY.md](SECURITY.md) for details.
+DeskCron has no hosted control plane. See [SECURITY.md](SECURITY.md).
+
+## Development
+
+```bash
+npm install
+npm run check
+npm run dev -- --help
+```
 
 ## Roadmap
 
-- stable workflow schema
 - file-watch and Git-event triggers
-- retry/backoff policies
-- conditional steps
 - encrypted local secrets
 - background service installers for Windows, macOS and Linux
-- workflow run history
 - optional desktop tray UI
+- richer history inspection
 - community recipe catalog
 
 ## Contributing

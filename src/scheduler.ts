@@ -59,7 +59,9 @@ export async function watchWorkflows(directory: string): Promise<void> {
     }
   }
 
-  log.ok(`DeskCron watching ${workflows.length} workflow(s), ${schedules} cron schedule(s), ${startupRuns} startup trigger(s)`);
+  log.success(
+    `Watching ${workflows.length} workflow(s), ${schedules} cron schedule(s), ${startupRuns} startup trigger(s)`,
+  );
   log.info('Press Ctrl+C to stop');
 
   await new Promise<void>((resolve) => {

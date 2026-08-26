@@ -1,6 +1,6 @@
 {
   "name": "deskcron",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Local-first workflow automation for developers.",
   "type": "module",
   "bin": {
@@ -8,15 +8,20 @@
   },
   "files": [
     "dist",
+    "recipes",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "SECURITY.md",
+    "CHANGELOG.md",
+    "UPGRADING.md"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsx src/cli.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "node --import tsx --test test/*.test.ts",
-    "check": "npm run typecheck && npm test && npm run build"
+    "check": "npm run typecheck && npm test && npm run build",
+    "prepublishOnly": "npm run check"
   },
   "engines": {
     "node": ">=22.12.0"

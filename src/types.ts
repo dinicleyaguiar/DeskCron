@@ -2,16 +2,26 @@ export type Trigger =
   | { type: 'startup' }
   | { type: 'cron'; expression: string; timezone?: string };
 
+export type RetryPolicy = {
+  attempts: number;
+  delay_seconds?: number;
+  backoff?: number;
+  max_delay_seconds?: number;
+};
+
 export type CommonStep = {
   id?: string;
   name?: string;
+  if?: string;
+  needs?: string[];
   continue_on_error?: boolean;
+  retry?: RetryPolicy;
+  timeout_seconds?: number;
 };
 
 export type RunStep = CommonStep & {
   run: string;
   cwd?: string;
-  timeout_seconds?: number;
   env?: Record<string, string>;
   save_as?: string;
 };
@@ -61,7 +71,43 @@ export type LoadedWorkflow = {
   workflow: Workflow;
 };
 
+export type StepStatus = 'success' | 'failed' | 'skipped' | 'planned';
+
+export type StepResult = {
+  id: string;
+  index: number;
+  name: string;
+  type: 'run' | 'http' | 'ollama' | 'notify';
+  status: StepStatus;
+  attempts: number;
+  duration_ms: number;
+  error?: string;
+};
+
 export type RunContext = {
   variables: Record<string, string>;
   cwd: string;
+  stepResults: Record<string, StepResult>;
+  hadFailure: boolean;
+  dryRun: boolean;
+};
+
+export type WorkflowRunStatus = 'success' | 'partial' | 'failed' | 'dry-run';
+
+export type WorkflowRunRecord = {
+  id: string;
+  workflow: string;
+  file: string;
+  cwd: string;
+  started_at: string;
+  finished_at: string;
+  duration_ms: number;
+  status: WorkflowRunStatus;
+  dry_run: boolean;
+  steps: StepResult[];
+};
+
+export type RunOptions = {
+  dryRun?: boolean;
+  recordHistory?: boolean;
 };

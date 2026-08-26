@@ -1,0 +1,34 @@
+version: 1
+name: Daily Git summary
+description: Summarize recent Git commits with a local Ollama model.
+
+triggers:
+  - type: cron
+    expression: "0 8 * * *"
+
+steps:
+  - id: commits
+    name: Read recent commits
+    run: git log --since="24 hours ago" --pretty=format:"%h %s"
+    save_as: recent_commits
+
+  - id: summarize
+    name: Summarize locally
+    needs: [commits]
+    if: recent_commits != ""
+    timeout_seconds: 120
+    ollama:
+      model: qwen3:8b
+      system: Be concise and technical.
+      prompt: |
+        Summarize these Git commits in at most five bullets:
+
+        {{recent_commits}}
+    save_as: summary
+
+  - id: notify
+    name: Notify summary
+    needs: [summarize]
+    notify:
+      title: Daily Git summary
+      message: "{{summary}}"

@@ -3,11 +3,12 @@ export type OllamaRequest = {
   model: string;
   prompt: string;
   system?: string;
+  timeoutSeconds?: number;
 };
 
 export async function ollamaGenerate(request: OllamaRequest): Promise<string> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10 * 60 * 1000);
+  const timer = setTimeout(() => controller.abort(), (request.timeoutSeconds ?? 600) * 1000);
 
   try {
     const response = await fetch(`${request.host.replace(/\/$/, '')}/api/chat`, {
@@ -32,6 +33,11 @@ export async function ollamaGenerate(request: OllamaRequest): Promise<string> {
     const content = data.message?.content?.trim();
     if (!content) throw new Error('Ollama returned an empty response');
     return content;
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error(`Ollama timed out after ${request.timeoutSeconds ?? 600}s`, { cause: error });
+    }
+    throw error;
   } finally {
     clearTimeout(timer);
   }

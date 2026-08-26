@@ -1,0 +1,25 @@
+version: 1
+name: Authenticated API health
+description: Check an API using a token from an environment variable.
+
+steps:
+  - id: api
+    name: Check API
+    retry:
+      attempts: 3
+      delay_seconds: 2
+      backoff: 2
+    timeout_seconds: 15
+    http:
+      url: https://api.example.com/health
+      method: GET
+      headers:
+        Authorization: "Bearer ${API_TOKEN}"
+      expect_status: [200]
+    save_as: api_response
+
+  - id: notify
+    needs: [api]
+    notify:
+      title: DeskCron
+      message: API health check passed
