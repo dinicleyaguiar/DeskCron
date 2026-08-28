@@ -79,7 +79,7 @@ deskcron watch
 
 ### From GitHub
 
-After the `v0.3.0` tag is published:
+Install the current public preview:
 
 ```bash
 npm install -g github:dinicleyaguiar/DeskCron#v0.3.0
@@ -402,3 +402,4 @@ Issues and focused pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
