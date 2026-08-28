@@ -1,14 +1,19 @@
 # DeskCron
 
+[![CI](https://github.com/dinicleyaguiar/DeskCron/actions/workflows/ci.yml/badge.svg)](https://github.com/dinicleyaguiar/DeskCron/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/dinicleyaguiar/DeskCron?display_name=tag)](https://github.com/dinicleyaguiar/DeskCron/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Node.js 22+](https://img.shields.io/badge/node-%3E%3D22.12-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+
 Local-first workflow automation for developers.
 
-DeskCron runs scheduled jobs, shell commands, HTTP checks, Git tasks, local Ollama prompts and desktop notifications from small YAML files. It does not require an account or a hosted control plane.
+DeskCron runs shell commands, HTTP checks, Git tasks, local Ollama prompts and desktop notifications from small YAML workflows. It has no hosted control plane and requires no account.
 
-> v0.2.0 adds dry runs, local run history, retries with backoff, step timeouts, conditions, dependencies and a built-in recipe collection.
+Status: v0.3.0 Public Preview
 
-## The idea
+## Why DeskCron
 
-A lot of developer automation belongs on the machine where the project, credentials, containers and local tools already live.
+A lot of developer automation belongs on the machine where the repository, containers, credentials and local tools already live.
 
 DeskCron gives those jobs a small, reviewable workflow file:
 
@@ -41,29 +46,28 @@ Run it now:
 deskcron run project-check
 ```
 
-Or keep schedules active:
+Or keep startup and cron workflows active:
 
 ```bash
 deskcron watch
 ```
 
-## What v0.2 includes
+## Highlights
 
-- manual, startup and cron execution
-- shell commands
-- HTTP requests
-- local Ollama steps
-- desktop notifications
-- `--dry-run` execution plans
+- local-first: workflows execute on your machine
+- YAML workflows that are easy to review and version
+- manual, startup and cron triggers
+- shell, HTTP, Ollama and desktop notification steps
+- dry-run execution plans
 - retries with delay and exponential backoff
 - per-step timeouts
-- safe conditional steps
-- dependencies between steps
+- safe conditional expressions
+- step dependencies with `needs`
 - local JSONL run history
 - overlap prevention
 - environment-variable secrets
-- workflow validation
-- bundled recipes that can be copied from the CLI
+- bundled, copyable workflow recipes
+- Windows and Linux CI coverage
 
 ## Requirements
 
@@ -71,37 +75,47 @@ deskcron watch
 - npm
 - optional: Ollama for local model steps
 
-## Install from source
+## Install
 
-Until the first npm release, install from the repository:
+### From GitHub
+
+After the `v0.3.0` tag is published:
 
 ```bash
-npm install
-npm run check
-npm link
+npm install -g github:dinicleyaguiar/DeskCron#v0.3.0
 ```
 
-Then verify the environment:
+Then:
 
 ```bash
 deskcron doctor
 ```
 
-## Quick start
+### From source
 
-Create a local workspace:
+```bash
+git clone https://github.com/dinicleyaguiar/DeskCron.git
+cd DeskCron
+npm install
+npm run check
+npm link
+```
+
+## 30-second start
+
+Create a workspace:
 
 ```bash
 deskcron init
 ```
 
-Validate it:
+Validate workflows:
 
 ```bash
 deskcron validate
 ```
 
-Preview what will happen without executing anything:
+Preview without side effects:
 
 ```bash
 deskcron run hello --dry-run
@@ -117,28 +131,25 @@ deskcron run hello
 
 DeskCron ships with workflows you can copy into a project.
 
-List them:
-
 ```bash
 deskcron recipes
-```
-
-Copy one:
-
-```bash
 deskcron recipe website-check
+deskcron validate
+deskcron run website-check --dry-run
 ```
 
-Current recipes:
+Bundled recipes:
 
-- `api-health`
-- `docker-compose-health`
-- `git-backup`
-- `git-dirty-notify`
-- `local-service-check`
-- `npm-project-check`
-- `ollama-summary`
-- `website-check`
+| Recipe | Purpose |
+| --- | --- |
+| `api-health` | Check an authenticated API endpoint |
+| `docker-compose-health` | Inspect a local Docker Compose stack |
+| `git-backup` | Commit and push local changes |
+| `git-dirty-notify` | Notify when a repository has uncommitted changes |
+| `local-service-check` | Check a service running on localhost |
+| `npm-project-check` | Run tests and build an npm project |
+| `ollama-summary` | Summarize recent Git commits locally |
+| `website-check` | Check whether a website responds successfully |
 
 Recipes are normal YAML files. Review and edit them before running.
 
@@ -159,8 +170,6 @@ if: environment != "production"
 ```
 
 Variables created with `save_as` and process environment variables can be used in conditions.
-
-Example:
 
 ```yaml
 steps:
@@ -198,8 +207,6 @@ A step is skipped when one of its required dependencies did not finish successfu
 
 ## Retries and backoff
 
-Retry transient operations such as HTTP checks or pushes:
-
 ```yaml
 steps:
   - id: push
@@ -224,11 +231,11 @@ steps:
     run: npm test
 ```
 
-For compatibility, HTTP steps may still place `timeout_seconds` inside `http`; the top-level value takes precedence.
+For compatibility, HTTP steps may also place `timeout_seconds` inside `http`; the top-level value takes precedence.
 
 ## Run history
 
-Successful and failed real runs are recorded locally at:
+Real runs are recorded locally at:
 
 ```text
 .deskcron/history/runs.jsonl
@@ -236,21 +243,9 @@ Successful and failed real runs are recorded locally at:
 
 This directory is ignored by the default `.gitignore`.
 
-Show recent runs:
-
 ```bash
 deskcron history
-```
-
-Filter them:
-
-```bash
 deskcron history --workflow "Website" --limit 50
-```
-
-Machine-readable output:
-
-```bash
 deskcron history --json
 ```
 
@@ -379,6 +374,10 @@ A DeskCron workflow can execute shell commands with your user permissions. Revie
 
 DeskCron has no hosted control plane. See [SECURITY.md](SECURITY.md).
 
+## Project status
+
+DeskCron is in Public Preview. The workflow schema is still version `1`, and v0.1/v0.2 workflows remain compatible. Until `1.0.0`, small CLI or schema details may evolve between minor releases.
+
 ## Development
 
 ```bash
@@ -402,4 +401,4 @@ Issues and focused pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).

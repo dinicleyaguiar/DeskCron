@@ -13,7 +13,7 @@ import { runWorkflow } from './runner.js';
 import { watchWorkflows } from './scheduler.js';
 
 const DEFAULT_DIR = '.deskcron/workflows';
-const VERSION = '0.2.0';
+const VERSION = '0.3.0';
 const program = new Command();
 
 function packageRoot(): string {

@@ -1,5 +1,19 @@
 # Changelog
 
+All notable changes to DeskCron are documented here.
+
+## 0.3.0 - Public Preview
+
+- prepare DeskCron for its first public repository release
+- add repository, homepage, issue tracker and author metadata to the npm package
+- add a build `prepare` hook so installs directly from GitHub compile the CLI automatically
+- add `prepack` verification for release artifacts
+- add GitHub tag release automation with checksums
+- add Dependabot configuration for npm and GitHub Actions
+- add a pull request template
+- strengthen public installation and project-status documentation
+- keep workflow schema version 1 compatible with v0.1 and v0.2 workflows
+
 ## 0.2.0
 
 - add `deskcron run --dry-run`
