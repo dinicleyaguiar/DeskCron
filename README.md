@@ -15,6 +15,10 @@ Status: v0.3.0 Public Preview
 
 A lot of developer automation belongs on the machine where the repository, containers, credentials and local tools already live.
 
+## Demo
+
+![DeskCron demo](docs/assets/deskcron-demo.gif)
+
 DeskCron gives those jobs a small, reviewable workflow file:
 
 ```yaml
